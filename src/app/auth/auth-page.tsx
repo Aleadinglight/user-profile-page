@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Button } from "@/components/ui/button"
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,8 +13,9 @@ export default function AuthPage() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
+  const router = useRouter()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
@@ -28,7 +30,22 @@ export default function AuthPage() {
     }
 
     // Here you would typically call your authentication API
-    console.log(isLogin ? 'Logging in...' : 'Registering...', { email, password })
+    try {
+      // Here you would typically call your authentication API
+      // For demonstration, we'll simulate a successful login
+      if (isLogin) {
+        console.log('Logging in...', { email, password })
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        // Redirect to user settings page after successful login
+        router.push('/user/settings')
+      } else {
+        console.log('Registering...', { email, password })
+        // Handle registration logic here
+      }
+    } catch (err) {
+      setError('An error occurred. Please try again.')
+    }
   }
 
   return (
