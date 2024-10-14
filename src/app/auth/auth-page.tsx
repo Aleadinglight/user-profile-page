@@ -1,11 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { login } from "@/app/auth/action";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircle } from "lucide-react"
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true)
@@ -14,6 +17,16 @@ export default function AuthPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const loginFailed = searchParams.get('loginFailed')
+    if (loginFailed === 'true') {
+      setError('Login failed. Please try again.')
+    } else {
+      setError('') // Clear the error when the parameter is not present
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -34,17 +47,27 @@ export default function AuthPage() {
       // Here you would typically call your authentication API
       // For demonstration, we'll simulate a successful login
       if (isLogin) {
-        console.log('Logging in...', { email, password })
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        // Redirect to user settings page after successful login
-        router.push('/user/settings')
+        const formData = new FormData();
+        formData.append('email', email);
+        formData.append('password', password);
+
+        // Call the login function from the auth action
+        const result = await login(formData);
+
+        if (result) {
+          // Redirect to user settings page after successful login
+          setError('')
+          router.push('/user/settings')
+        } else {
+          // Redirect to login page with error message
+          setError('Failed to login. Please try again.')
+        }
       } else {
         console.log('Registering...', { email, password })
         // Handle registration logic here
       }
     } catch (err) {
-      setError('An error occurred. Please try again.')
+      setError('Failed to login. Please try again.')
     }
   }
 
@@ -60,6 +83,13 @@ export default function AuthPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -94,7 +124,6 @@ export default function AuthPage() {
                 />
               </div>
             )}
-            {error && <p className="text-sm text-red-500">{error}</p>}
             <Button className="w-full" type="submit">
               {isLogin ? 'Login' : 'Register'}
             </Button>
