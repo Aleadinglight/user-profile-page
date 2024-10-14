@@ -67,6 +67,7 @@ export default function AuthPage() {
         // Handle registration logic here
       }
     } catch (err) {
+      console.error('Failed to login:', err)
       setError('Failed to login. Please try again.')
     }
   }
