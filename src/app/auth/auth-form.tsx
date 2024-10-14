@@ -93,7 +93,7 @@ export default function AuthForm() {
           )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="font-semibold">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -104,7 +104,7 @@ export default function AuthForm() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="font-semibold">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -115,7 +115,7 @@ export default function AuthForm() {
             </div>
             {!isLogin && (
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Label htmlFor="confirmPassword" className="font-semibold">Confirm Password</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
@@ -130,10 +130,13 @@ export default function AuthForm() {
             </Button>
           </form>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex flex-col space-y-4">
           <Button variant="link" className="w-full" onClick={() => setIsLogin(!isLogin)}>
             {isLogin ? "Don't have an account? Register" : "Already have an account? Login"}
           </Button>
+          <p className="text-sm text-gray-500">
+            By continuing, you agree to our Terms of Service and Privacy Policy.
+          </p>
         </CardFooter>
       </Card>
     </div>
