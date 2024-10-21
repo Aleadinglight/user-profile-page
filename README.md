@@ -39,3 +39,40 @@ Required environment variables:
 - Enhancing form validation
 - Implementing unit and integration tests
 - Optimizing performance using Next.js features like ISR
+
+
+## FAQ
+# Next.js User Authentication and Profile Management
+
+[... previous content remains the same ...]
+
+## FAQ
+
+### Q: Why am I getting a "406 Not Acceptable" error when trying to fetch user profiles?
+
+A: This error typically occurs when Row Level Security (RLS) is enabled on your Supabase profiles table, but no policies have been added. To resolve this:
+
+1. Go to your Supabase project dashboard.
+2. Navigate to the "Authentication" section in the sidebar.
+3. Click on "Policies".
+4. Find your "profiles" table in the list.
+5. Add the following policies:
+
+```sql
+-- Policy to allow users to select their own profile
+CREATE POLICY "Users can view own profile" ON profiles
+  FOR SELECT
+  USING (auth.uid() = id);
+
+-- Policy to allow users to insert their own profile
+CREATE POLICY "Users can insert own profile" ON profiles
+  FOR INSERT
+  WITH CHECK (auth.uid() = id);
+
+-- Policy to allow users to update their own profile
+CREATE POLICY "Users can update own profile" ON profiles
+  FOR UPDATE
+  USING (auth.uid() = id);
+```
+
+After adding these policies, authenticated users should be able to fetch and update their own profiles.
