@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,16 +10,90 @@ import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { createClient } from '@/utils/supabase/client'
 import { Bell, Lock, User, LogOut } from 'lucide-react'
 import { logout } from "@/app/auth/action"
 import { useRouter } from 'next/navigation'
 
+// Create the Supabase client outside the component
+const supabase = createClient()
+
 export default function UserSettings() {
-  const [name, setName] = useState('John Doe')
-  const [email, setEmail] = useState('john.doe@example.com')
+  const [loading, setLoading] = useState(true)
+  const [fullName, setFullName] = useState('')
+  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
+  const [bio, setBio] = useState('')
+  const [avatarUrl, setAvatarUrl] = useState('')
   const [emailNotifications, setEmailNotifications] = useState(true)
   const [pushNotifications, setPushNotifications] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        setLoading(true)
+        const { data: { user } } = await supabase.auth.getUser()
+        console.log('Current user:', user)
+
+        if (user) {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single()
+
+          if (error) throw error
+
+          if (data) {
+            setFullName(data.full_name || '')
+            setUsername(data.username || '')
+            setBio(data.bio || '')
+            setAvatarUrl(data.avatar_url || '')
+            // Uncomment these if you decide to include email and phone in the profiles table
+            // setEmail(data.email || '')
+            // setPhone(data.phone || '')
+          }
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error)
+        // You might want to show an error message to the user here
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadProfile()
+  }, []) //
+
+  const handleSave = async () => {
+    try {
+      setLoading(true)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('No user found')
+
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          full_name: fullName,
+          username,
+          bio,
+          avatar_url: avatarUrl,
+          updated_at: new Date().toISOString(),
+        })
+
+      if (error) throw error
+
+      alert('Profile updated successfully!')
+    } catch (error) {
+      console.error('Error updating profile:', error)
+      alert('Failed to update profile. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleLogout = async () => {
     try {
@@ -29,10 +103,6 @@ export default function UserSettings() {
       console.error('Logout failed:', error)
       alert('An error occurred while logging out. Please try again.')
     }
-  }
-
-  const handleSave = () => {
-    console.log('Saving settings...')
   }
 
   return (
@@ -62,32 +132,59 @@ export default function UserSettings() {
             <CardContent className="space-y-4">
               <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
                 <Avatar className="h-20 w-20">
-                  <AvatarImage src="/placeholder.svg?height=80&width=80" alt="User avatar" />
-                  <AvatarFallback>JD</AvatarFallback>
+                  <AvatarImage src={avatarUrl ?? "/placeholder.svg?height=80&width=80"} alt="User avatar" />
+                  <AvatarFallback>{fullName.split(' ').map(n => n[0]).join('').toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <Button>Change Avatar</Button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Full Name</Label>
-                  <Input id="fullName" placeholder="John Doe" />
+                  <Input
+                    id="fullName"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="John Doe"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="username">Username</Label>
-                  <Input id="username" placeholder="johndoe" />
+                  <Input
+                    id="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="johndoe"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="john@example.com" />
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="john@example.com"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone</Label>
-                  <Input id="phone" type="tel" placeholder="+1 (555) 000-0000" />
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+1 (555) 000-0000"
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="bio">Bio</Label>
-                <Textarea id="bio" placeholder="Tell us about yourself" />
+                <Textarea
+                  id="bio"
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="Tell us about yourself"
+                />
               </div>
             </CardContent>
             <CardFooter className="flex flex-col sm:flex-row justify-between space-y-2 sm:space-y-0">
